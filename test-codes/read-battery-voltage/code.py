@@ -12,7 +12,8 @@ while True:
     battery_voltage = round( get_voltage( vbat_voltage_pin ), 2 )
 
     #check clock battery OK
+    clock_battery_status = "NA"
 
-    print( "Main Battery voltage: {}   Clock Battery status: {}".format( battery_voltage, "NA" ) )
+    print( "Main Battery voltage: {}   Clock Battery status: {}".format( battery_voltage, clock_battery_status ) )
 
     time.sleep( 1 )
