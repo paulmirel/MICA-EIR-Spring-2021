@@ -1,12 +1,18 @@
 import board
+import time
 from analogio import AnalogIn
 
 vbat_voltage_pin = AnalogIn(board.VOLTAGE_MONITOR)
 
 
-def get_voltage(pin):
-    return (pin.value * 3.3) / 65536 * 2
+def get_voltage( pin ):
+    return ( pin.value * 3.3 ) / 65536 * 2
 
+while True:
+    battery_voltage = round( get_voltage( vbat_voltage_pin ), 2 )
 
-battery_voltage = get_voltage(vbat_voltage_pin)
-print("VBat voltage: {:.2f}".format(battery_voltage))
+    #check clock battery OK
+
+    print( "Main Battery voltage: {}   Clock Battery status: {}".format( battery_voltage, "NA" ) )
+
+    time.sleep( 1 )
