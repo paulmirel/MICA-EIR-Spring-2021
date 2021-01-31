@@ -11,8 +11,7 @@ import storage
 import terminalio
 
 #Adalogger Featherwing uses pin D10 for the SDCard chip select line on the SPI bus
-#THAT WAS A COLLISION, so I modified the SD card to use pin D11 for chip select
-SD_CS = board.D11
+SD_CS = board.D10
 spi_bus = board.SPI()
 # Connect to the card and mount the filesystem.
 sd_cs = digitalio.DigitalInOut( SD_CS )
@@ -23,8 +22,8 @@ storage.mount( vfs, "/sd" )
 
 with open( "/sd/test.txt", "w" ) as f:
     f.write( "year month day batch checksum" )
-    
-    
+
+
 with open("/sd/test.txt", "r") as f:
     print("Printing lines in file:")
     line = f.readline()
