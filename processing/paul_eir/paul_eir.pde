@@ -25,7 +25,7 @@ void draw() {
   drawer.one_frame();
   updatePixels();
   
-  data_source.update();
+  drawer.datasource.update();
   
   // every second:
   // if ( frameCount % f_rate == 0 ) {

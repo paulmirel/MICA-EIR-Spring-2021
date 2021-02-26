@@ -1,5 +1,7 @@
 class AlanNoiseScape extends NoiseScape {
 
+  // a few choices for dynamic behavior
+
   AlanNoiseScape(DataSource data_source) { 
     super(data_source);
   }

@@ -22,6 +22,7 @@ class DataSource {
   // and provide it as specific method names
   // Subclass for various "somewheres" (serial port, mqtt)
 
+  // This base class uses the mouse to set the vis_color & temp
   float temperature() {
     // normalize? to a room temperature things, body =~ 37, room = 20
     return map(mouseX, 0, width, 15, 50); // a bit cold for room temp
@@ -47,6 +48,11 @@ class DataSource {
     }
     return power;
   }
+
+  void update() {
+    // if you need to calculate/read/etc
+    // do it here, called every loop of draw()
+  }
 }
 
 class NoiseScape {
@@ -55,6 +61,8 @@ class NoiseScape {
     // This base-class has fixed values
     // Subclass for data-driven
 
+    // This base class has constant values, so is a bit boring
+    
     float noise_z = 0.0;
   DataSource datasource;
 
@@ -79,7 +87,7 @@ class NoiseScape {
 
   color rgb(float brightness) {
     // convert each pixel to rgb
-    
+
     return color( brightness*255, brightness*255, brightness*255 );
   }
 
