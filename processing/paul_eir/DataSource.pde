@@ -1,22 +1,3 @@
-class RangedValue {
-  // packages up a value with the range you want to use
-  // for map() like behavior
-  // basically curried, but you could do a non-linear mapping
-
-  float v, min, max;
-
-  RangedValue(float v, float from_min, float from_max) {
-    this.v = v;
-    this.min = min;
-    this.max = max;
-  }
-
-  float to_range(float to_min, float to_max) {
-    // map it to that range
-    return map(v, min, max, to_min, to_max);
-  }
-}
-
 class DataSource {
   // can read some sensor data from somewhere
   // and provide it as specific method names
@@ -24,7 +5,8 @@ class DataSource {
 
   // This base class uses the mouse to set the vis_color & temp
   float temperature() {
-    // normalize? to a room temperature things, body =~ 37, room = 20
+    // normalize to celsius
+    // to a room temperature things, body =~ 37, room = 20
     return map(mouseX, 0, width, 15, 50); // a bit cold for room temp
   }
 
@@ -32,7 +14,6 @@ class DataSource {
     // 6 bands, presumably going to be grouped to r,g,b
     // order is: vibgyor
     // stella gives numbers like 0..35
-    // but this needs to map that to 0 .. 1.0
     float center = map(mouseY, 0, height, 0.0, 5.0);
     float power[] = new float[6];
     for (int i = 0; i < power.length; i++) {

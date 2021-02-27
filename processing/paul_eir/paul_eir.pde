@@ -7,28 +7,36 @@ float zincrement = 0.2; // larger equals "faster" change
 NoiseScape drawer;
 float f_rate = 30;
 
+
 void setup() {
 
-  size(1280, 720);
-  frameRate(f_rate);
+  //size(1280, 720);
+  size(640, 480);
+  //frameRate(f_rate);
 
-  DataSource data_source = new SerialDataSourceStella();
-  drawer = new AlanNoiseScape(data_source);
+  // Non-interactive
+  //drawer = new NoiseScape( new DataSource() );
+
+  // mouse:
+  //drawer = new AlanNoiseScape( new DataSource() );
+
+  // stella
+  drawer = new AlanNoiseScape( new SerialDataSourceStella() );
 }
 
 void draw() {
 
-  // Optional: adjust noise detail here
-  // noiseDetail(8,0.65f);
-
   loadPixels();
   drawer.one_frame();
   updatePixels();
+
   
-  drawer.datasource.update();
+  //print(frameCount); print(" "); println(frameRate);
   
   // every second:
   // if ( frameCount % f_rate == 0 ) {
+}
 
-
+void serialEvent(Serial x) {
+  drawer.datasource.update();
 }

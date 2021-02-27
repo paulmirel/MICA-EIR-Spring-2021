@@ -43,7 +43,6 @@ class AlanNoiseScape extends NoiseScape {
     // exaggerate the differences
     //red = red - avg;
 
-
     return color( red*brightness*255, green*brightness*255, blue*brightness*255 );
   }
 }
