@@ -8,20 +8,25 @@ class SerialDataSourceStella  extends DataSource {
   byte[] buffer = new byte[11 * 1024]; // lots of room
   ReadALine dline;
   float _temp = 0.0;
+  float _vis[] = new float[6];
 
   SerialDataSourceStella() {
     // on a crash, the port may not be released. restart processing then.
     // will be null if we can't find anything
-    dline = new ReadALine(connectUSBSerial(115200), 1000, "[");
+    dline = new ReadALine(connectUSBSerial(115200), "[");
   }
 
   float temperature() {
     return this._temp;
   }
 
+  float[] vis_color() {
+    return this._vis;
+  }
+  
   void update() {
-    dline.update();
     String data_line = dline.get_line(); // only relevant lines
+
     if (data_line == null) return;
 
     print(data_line.length());
@@ -34,6 +39,10 @@ class SerialDataSourceStella  extends DataSource {
     if (! extract_temperature(data_line) ) {
       print("Failed to extract temperature");
     }
+    
+    if (! extract_vis(data_line) ) {
+      print("Failed to extract vis");
+    }
   }
 
   boolean extract_temperature(String data_line) {
@@ -44,7 +53,42 @@ class SerialDataSourceStella  extends DataSource {
     this._temp = t.floatValue();
     print("temp ");
     println(this._temp);
+
+    return true;
+  }
+
+  boolean extract_vis(String data_line) {
+    String prefix = "'visible_spectrum,nm,uW/cm^2,12/100', ";
+    int start = data_line.indexOf( prefix );
+    if (start < 0) return false;
     
+    //print("prefix ");println(data_line.substring(start));
+        
+    start += prefix.length();
+    //print("data ");print( data_line.length());print(" ");println(data_line.substring(start));
+
+    // vis data looks like:
+    // 450, 0.0, 500, 0.0, 550, 0.0, 570, 0.0, 600, 0.0, 650, 0.0,
+    // which is wavelength, value, value, precision...
+    
+    for(int i=0; i < this._vis.length * 2; i += 1) {
+      // so, length pairs of data...
+      
+      int end = data_line.indexOf( ",", start);
+      //print("  next ");print(i);print(" ");print(end);print(" ");
+      //println( data_line.substring(start, end) );
+      
+      if ( i % 2 == 1 ) {
+        // but only take every other one
+        this._vis[i/2] = Float.parseFloat( data_line.substring(start, end) );
+      }
+      start = end + 1; // past ','
+      //print(" past ");println( data_line.substring(start, start+6) );
+      if ( data_line.substring(start,start+1).equals(" ") ) start += 1; // past ", "
+    }
+    print("vis ");
+    for (float f : this._vis) print(f);
+    println();
     return true;
   }
 
@@ -54,15 +98,15 @@ class SerialDataSourceStella  extends DataSource {
 
     int start = data_line.indexOf( prefix );
     if (start < 0) return null;
-    
+
     start += prefix.length();
     /*
     print("found at ");
-    print( start );
-    print( " " );
-    println( data_line.substring(start) );
-    */
-    
+     print( start );
+     print( " " );
+     println( data_line.substring(start) );
+     */
+
     int end = data_line.indexOf( ",", start );
     if (end < 0) end = data_line.length();
 

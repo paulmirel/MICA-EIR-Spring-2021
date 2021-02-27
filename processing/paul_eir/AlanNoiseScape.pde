@@ -1,3 +1,5 @@
+import java.lang.Math;
+
 class AlanNoiseScape extends NoiseScape {
 
   // a few choices for dynamic behavior
@@ -20,7 +22,7 @@ class AlanNoiseScape extends NoiseScape {
   float speed() {
     // i.e. step size in the z noise dimension
     // high temp is slower
-    return map( datasource.temperature(), 15.0, 50.0, 0.1, 0.03);
+    return map( datasource.temperature(), 15.0, 40.0, 0.1, 0.03);
   }
 
   color rgb(float brightness) {
@@ -40,8 +42,14 @@ class AlanNoiseScape extends NoiseScape {
     float green = (colors[3] + colors[2]) / 2.0;
     float blue = (colors[1] + colors[0]) / 2.0;
 
-    // exaggerate the differences
-    //red = red - avg;
+    // re-map to full scale
+    float min = Math.min( red, Math.min( green, blue ));
+    float max = Math.max( red, Math.max( green, blue ));
+    max += 0.001;
+
+    red = map( red, min, max, 0.0, 1.0 );
+    green = map( green, min, max, 0.0, 1.0 );
+    blue = map( blue, min, max, 0.0, 1.0 );
 
     return color( red*brightness*255, green*brightness*255, blue*brightness*255 );
   }

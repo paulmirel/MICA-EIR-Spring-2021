@@ -10,8 +10,8 @@ float f_rate = 30;
 
 void setup() {
 
-  //size(1280, 720);
-  size(640, 480);
+  size(1280, 720);
+  //size(640, 480);
   //frameRate(f_rate);
 
   // Non-interactive
