@@ -13,7 +13,8 @@ else:
         vbat_voltage = analogio.AnalogIn(board.VOLTAGE_MONITOR)
         voltage = vbat_voltage.value
         print("My raw board.VOLTAGE_MONITOR is {:}".format(voltage))
-        print("So, I think my voltage is {:}".format( (voltage * 3.3 ) /65535 * 2))
+        print("  So, I think my voltage is {:}".format( (voltage * 3.3 ) /65535 * 2))
+        print("  (if that formulat is right)")
     else:
         print("I don't know what voltage I'm plugged into (microcontroller.voltage)")
 
@@ -26,7 +27,7 @@ v = sys.maxsize
 while v:
     bits += 1
     v >>= 1
-print("Max integer is {:} ({:} bits)".format( sys.maxsize, bits+1 ) ) # +1 for sign
+print("Max integer is {:} (implying an int is {:} bits)".format( sys.maxsize, bits+1 ) ) # +1 for sign
 
 print("I look for import files in:")
 for p in sys.path:
