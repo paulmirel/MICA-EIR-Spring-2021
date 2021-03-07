@@ -56,6 +56,6 @@ try:
     print("  (usually not battery backup, so it restarts at power-up)")
 except ImportError:
     print("I don't have a built-in RTC (or, at least, no rtc module)")
-except Exception(e):
-    print("I don't seem to have a built-in rtc: {:}".format(e))
+except Exception as e:
+    print("I don't seem to have a built-in rtc: {:} {:}".format(e.__class__.__name__, e))
 

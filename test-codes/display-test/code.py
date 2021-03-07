@@ -1,11 +1,11 @@
 """
 Author: Mark Roberts (mdroberts1243) from Adafruit code
-This test will initialize the display using displayio and draw a solid white
-background, a smaller black rectangle, miscellaneous stuff and some white text.
-
 """
+print("This test will initialize the display using displayio and draw a solid white")
+print("background, a smaller black rectangle, miscellaneous stuff and some white text.")
 
 import board
+import time
 import displayio
 import terminalio
 
@@ -69,6 +69,5 @@ text_area2 = label.Label(
     terminalio.FONT, text=text2, scale=2, color=0xFFFFFF, x=9, y=44
 )
 splash.append(text_area2)
-
-while True:
-    pass
+time.sleep(5) # enough time for background task to draw
+displayio.release_displays() # or else you will mysterioiusly screw up the next code.py that wants scl

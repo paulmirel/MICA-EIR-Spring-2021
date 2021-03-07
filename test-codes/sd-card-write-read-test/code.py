@@ -10,6 +10,10 @@ import digitalio
 import storage
 import terminalio
 
+print("Mount the sdcard")
+print("Write some data to it and read it back")
+print(" ")
+
 #Adalogger Featherwing uses pin D10 for the SDCard chip select line on the SPI bus
 SD_CS = board.D10
 spi_bus = board.SPI()

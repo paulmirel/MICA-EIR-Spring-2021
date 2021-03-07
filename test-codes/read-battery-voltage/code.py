@@ -4,9 +4,22 @@ import busio
 import adafruit_pcf8523
 from analogio import AnalogIn
 
+print("Print the main-voltage, and rtc board battery status")
+print("Over and Over again")
+
 vbat_voltage_pin = AnalogIn(board.VOLTAGE_MONITOR)
 
-I2C_bus = busio.I2C(board.SCL, board.SDA)
+try:
+    I2C_bus = busio.I2C(board.SCL, board.SDA)
+except ValueError as e:
+    if "Invalid pins" in str(e):
+        print("Sadly, the SCL and/or SDA didn't get released properly on some previous run")
+        print("So, sadly, you have to press reset")
+        sys.exit(1)
+    else:
+        print("Something went wrong during busio.I2C() init")
+        raise(e)
+
 rtc = adafruit_pcf8523.PCF8523(I2C_bus)
 
 
