@@ -1,6 +1,7 @@
 /*
 Assumes the device is printing left/right/up/down data like:
  [100,5,200,99]
+ (range 0..255)
  Which test-codes/sense-4-sensors/code.py does 
  by reading the "gesture" sensor apds9660.
  Nb.: We rely on there being no spaces in that data string.
@@ -162,8 +163,4 @@ void update_boxes( int[] values ) {
   stroke(255);
   fill(255);
   ellipse(center_x, center_y, 10, 10);
-}
-
-void xserialEvent(Serial x) {
-  //drawer.datasource.update();
 }
