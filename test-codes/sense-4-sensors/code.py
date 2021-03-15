@@ -1,5 +1,7 @@
 """
-Read the 4 gesture sensors independently
+Read the 4 gesture sensors independently,
+and print them: [up,down,left,right]
+Try running processing/sensors_4 to visualize the data.
 """
 
 from board import SCL, SDA
@@ -28,6 +30,7 @@ while not apds:
             raise(e)
 
 print("Found apds9660")
+print("Trigger activity by getting very close to sensor")
 
 apds.enable_proximity = True
 apds.enable_gesture = True
@@ -47,6 +50,12 @@ smoothed = [0,0,0,0]
 prev = smoothed.copy()
 
 while True:
+    # nb: the sensor datasheet calls the values:
+    # left,right,up,down
+    # (which makes sense if you are looking for direction of motion)
+    # BUT, the actual sensor is the reflected one,
+    # so really:
+    # right,left,down,up
     data = apds.gesture_data()
 
     if data:
@@ -60,4 +69,11 @@ while True:
         prev = smoothed.copy()
         # only  print if different
         if diff:
-            print("[{:03.0f},{:03.0f},{:03.0f},{:03.0f}]".format( smoothed[0], smoothed[1], smoothed[2], smoothed[3] ))
+            # our processing sketch is relying on this exact format:
+            # leading [
+            # no spaces, comma seperated, 4 int values (0..255)
+            # AND
+            # remembering that the sensor values are reflected
+            # and we want to print up,down,left,right
+            # we reflect here:
+            print("[{:03.0f},{:03.0f},{:03.0f},{:03.0f}]".format( smoothed[1], smoothed[0], smoothed[2], smoothed[3] ))
