@@ -1,7 +1,21 @@
 """
-Read the 4 gesture sensors independently,
+Read the 4 gesture sensors data,
 and print them: [up,down,left,right]
 Try running processing/sensors_4 to visualize the data.
+
+I get extremely strong coupling between the up & right values, and then the down & left.
+Almost giving me only 2 values instead of 4.
+
+Things to play with:
+    Get better distinct up & right, etc, by
+        disable up/down, then disable left/right with
+        .gesture_dimensions(1) or 2
+        But, I get no data then
+    Manually play with LEDBOOST to get further detection
+        ( CONFIG2<LEDBOOST>0x90<5:4> )
+        which affects proximity too
+    Use the enter/exit conditions for gesture
+
 """
 
 from board import SCL, SDA
@@ -30,10 +44,14 @@ while not apds:
             raise(e)
 
 print("Found apds9660")
-print("Trigger activity by getting very close to sensor")
+print("Trigger activity by getting close to sensor")
 
 apds.enable_proximity = True
 apds.enable_gesture = True
+# Data won't start till proximity triggers:
+# 0 starts data immediately, 2 starts if about 4 inches away, 5 starts if about 3 inches away, 
+apds.gesture_proximity_threshold = 2
+
 
 # Uncomment and set the rotation if depending on how your sensor is mounted.
 # apds.rotation = 270 # 270 for CLUE
