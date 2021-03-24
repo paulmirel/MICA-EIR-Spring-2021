@@ -3,7 +3,8 @@ Provides a simple interface to write csv data.
 
 from timestamp_csv_data import timestamp_and_record
 
-See the help(timestamp_and_record)
+Help isn't preserved in circuitpython, you'll have to read the comments for
+    def timestamp_and_record()
 """
 
 import storage, os, board, digitalio, sys
@@ -19,10 +20,6 @@ def setup(spi_bus=None, sdcard_cs_pin=None):
         Assumes board.SPI(), and board.D10 (should be SD_CS, but that isn't define everywhere).
     """
     global data_fh, mounted
-
-    # None means "haven't tried yet (or was closed)"
-    # False means "tried and failed"
-    data_fh = False # we (will have) tried
 
     if not mounted:
         mount_point, delim, rest = path[1:].partition("/") # skip leading /, nb: /sd/bob -> ('', '/', 'sd/bob')
@@ -56,8 +53,11 @@ def setup(spi_bus=None, sdcard_cs_pin=None):
 def _open():
     global data_fh
 
+    # None means "haven't tried yet (or was closed)"
+    # False means "tried and failed"
+
     try:
-        if not data_fh:
+        if data_fh == None:
             data_h = False # we will have tried, None means we haven't tried
             data_fh = open( path, 'a')
     except OSError as e:

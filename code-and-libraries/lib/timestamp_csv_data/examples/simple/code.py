@@ -1,16 +1,22 @@
 """
-Write data with full control, no defaults.
+Write data testing.
 
-Assumes: adafruit_sdcard using featherwing adalogger spi with CS=D11
+Assumes: adafruit_sdcard using featherwing adalogger spi with CS=D10
 """
-from timestamp_csv_data import timestamp_and_record
-import timestamp_csv_data # normal people don't need this, we do tricky stuff to test
 
-import board,sys,busio
+# The key:
+from timestamp_csv_data import timestamp_and_record
+
+# we'll need to setup the rtc
+import board,busio
 import adafruit_pcf8523
 
+# only for this testing code
+import timestamp_csv_data # normal people don't need this, we do tricky stuff to test
+import sys
+
 def diff(row_number, file_data, expected):
-    """After we write, tell if the file_data is what we expected"""
+    """For the testing: After we write, tell if the file_data is what we expected"""
     print("line",row_number)
     bad = False
 
@@ -42,6 +48,10 @@ def diff(row_number, file_data, expected):
         sys.stdout.write(file_data)
 
 
+# SETUP
+
+# We want the RTC for timestamps (it is optional)
+print("# Setup PCF8523")
 myI2C = busio.I2C(board.SCL, board.SDA)
 rtc = adafruit_pcf8523.PCF8523(myI2C)
 
@@ -49,8 +59,13 @@ print("# Setup timestamp_and_record")
 if not timestamp_and_record( rtc ):
     print("#  failed!")
 
+# We want to rotate the data.csv file, because we are testing
+# You don't need to
 print("# Rotate /sd/data.csv to get an empty one")
 timestamp_csv_data.rotate() # old one is named by the datetime of now
+
+
+# DO WORK (in this case, testing)
 
 print("# Write a single value")
 if not timestamp_and_record(1):
