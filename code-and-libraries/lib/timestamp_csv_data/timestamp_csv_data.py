@@ -1,71 +1,43 @@
 """
-Provides a simple interface to write csv data, with access to more detailed control via an object(s).
-Each line of data has a timestamp prefix, and is comma-seperated.
-Each line is echoed to sys.stdout
-Options allow writing the data as name,units,precision,value for each value.
+Provides a simple interface to write csv data.
 
-#### Simplest interface, "inline", just values
-# (a bunch of defaults)
-import timestamp_and_record from timestamp_csv_data
+from timestamp_csv_data import timestamp_and_record
 
-set up your sensors etc...
-
-while(True):
-    ...
-    # "inline" writing data without fieldnames:
-    # Any number of values, should be numeric.
-    # Will try to use: board.SPI(), and board.D11 for sd-card-CS, mounting it as /sd.
-    # Will write one line of data to the default datafile /sd/data.csv
-    # (This will write data at the maximum speed of this `while` loop!)
-    timestamp_csv_data( sensor1.readcolor(), analog1.read(), sensor3.getTemperature() )
-
-#### Simple interface, "accumulate a list" 
-# Almost as simple as above
-# (you can also use an `array` here instead of a list)
-import timestamp_and_record from timestamp_csv_data
-
-set up your sensors etc...
-
-while(True):
-    ...
-    # "accumulating" might make more sense for you
-    data = []
-    # add data to the list, again, should be numeric.
-    data.append( sensor1.readcolor() )
-    ...
-    data.append( analog1.read() )
-    ...
-    data.append( sensor3.getTemperature() )
-    ...
-    # etc.
-
-    # writing a list without fieldnames
-    # Like the above, but using a list
-    timestamp_csv_data( data )
+See the help(timestamp_and_record)
 """
 
-import storage, os
+import storage, os, board, digitalio, sys
+import adafruit_sdcard
 
-class TimeStampCSV:
-    def __init__(self, path="/sd/data.csv", automount=None, timestamp=None):
-        """
-            path = location of datafile, will mkdir
-            automount =  { "path" : "/sd1", "spi" : board.SPI(), "CS" : board.SD_CS }
-                All parts are optional
-            timestamp =
-                None : no timestamp prefix
-                some-rtc-device : with a .datetime property, like the adafruit_pcf8523
-        """
-        # FIXME: the assumptions that go into timestamp=True are overly specific to our hardware
+path = "/sd/data.csv"
+data_fh = None # the state of the (open) file
+timestamp_source = None
+mounted = False
 
-        self.fh = None # serves as a flag too
+def setup(spi_bus=None, sdcard_cs_pin=None):
+    """Called automatically by timestamp_and_record() the first time.
+        Assumes board.SPI(), and board.D10 (should be SD_CS, but that isn't define everywhere).
+    """
+    global data_fh, mounted
 
-        if automount:
-            import adafruit_sdcard, digitalio
-            spi_bus = automount['spi'] or board.SPI()
-            sdcard = adafruit_sdcard.SDCard( spi_bus, digitalio.DigitalInOut( automount["CS"] or board.SD_CS ) )
+    # None means "haven't tried yet (or was closed)"
+    # False means "tried and failed"
+    data_fh = False # we (will have) tried
+
+    if not mounted:
+        mount_point, delim, rest = path[1:].partition("/") # skip leading /, nb: /sd/bob -> ('', '/', 'sd/bob')
+        mount_point = "/" + mount_point
+        print("#   setup sd_card and mount as {:}".format(mount_point))
+
+        try:
+            spi_bus = spi_bus or board.SPI()
+            sdcard = adafruit_sdcard.SDCard( spi_bus, digitalio.DigitalInOut( sdcard_cs_pin or board.D10 ) )
             vfs = storage.VfsFat( sdcard )
-            storage.mount( vfs, automount['path'] )
+            storage.mount( vfs, mount_point )
+            mounted = True
+        except ValueError as e:
+            print('Failed to setup and mount the sdcard as "/sd": {:}'.format(e))
+            raise
 
         path_dir, delim, leaf = path.rpartition("/")
         try:
@@ -81,106 +53,175 @@ class TimeStampCSV:
             else:
                 raise # who knows
 
-        self.timestamp = timestamp
+def _open():
+    global data_fh
 
-        self.fh = open( path, 'w')
-        self.beginning_of_line = True
+    try:
+        if not data_fh:
+            data_h = False # we will have tried, None means we haven't tried
+            data_fh = open( path, 'a')
+    except OSError as e:
+        print("Failed to open {:}: {:}".format(path, e))
 
-    def write(self, *args, units=None, format=None, precision=None):
-        """
-        Writes values with optional parts (see "args" below):
-            # up to 4 parts for each value:
-            name,units,precision,value,...
-        Each row has the timestamp (presumed utc) as the first value:
-            YYYYMMDDTHHMMSSZ,values...
-            i.e.:
-            20210107T155500Z,values...
+def timestamp_and_record(*args):
+    """
+    First, setup with a .datetime() source:
+        # like a adafruit_pcf8523 object
+        timestamp_and_record( some_real_time_clock ) 
+    Then write csv data:
+        # Does a "to string" on them as formatting
+        # Writes to /sd/data.csv AND the console
+        #   We prefix with "DATA: " on the console
+        # Always appending to /sd/data.csv
+        # Call rotate() to rename current file and start a new one
+        timestamp_and_record( v1, v2, v3, v4 )
+        and/or
+        data = []
+        data.append( v1 )
+        data.append( v2 )
+        ...
+        timestamp_and_record( data )
+    Each row has the timestamp (presumed utc) as the first value:
+        # IFF you did the setup
+        YYYYMMDDTHHMMSSZ,values...
+        i.e.:
+        20210107T155500Z,values...
+    """
+    global timestamp_source
 
-        optional:
-            units is a string 
-                default is to omit
-            format is a string.format argument, like "{:03.1f}"
-                default is "{:}", i.e. str()
-            precision is string
-                default is to omit
-        args can be:
-            One value at a time:
-                # format is optional
-                write(somevalue, format="{:03.1f}" ) # no other arguments
-                write(...) # next value
-                # You must end the row:
-                write() # end row
-            Name and value, and extra info, one at a time:
-                # extra info is optional
-                write("itsname", itsvalue, units=...,format=..., precision=...)
-                write(...)
-                # You must end the row:
-                write()
-            A whole row of just values:
-                write( [1,3,4] )
-            A whole row of names and values:
-                write( {"name1" : 1, "name2" : 2 } )
-        """
+    # On the first call, try to setup
+    if not mounted:
+        setup()
+    if mounted and data_fh == None:
+        _open()
 
-        if not self.fh:
-            return
+    if len(args) == 1 and getattr(args[0], "datetime", None):
+        # the "setup" like call
+        print("#   set timestamp_source = {:}".format(args[0]))
+        timestamp_source = args[0]
+        timestamp_source.datetime # force first use to get early error
+        return True
 
-        if self.beginning_of_line and self.timestamp:
-            dt = self.timestamp.datetime
-            iso8601_utc = "{:04}{:02}{:02}T{:02}{:02}{:02}Z".format( dt.tm_year, dt.tm_mon, dt.tm_mday, dt.tm_hour, dt.tm_min, dt.tm_sec)
-            self.fh.write(iso8601_utc)
-            self.beginning_of_line = False
+    # on the console prefix:
+    sys.stdout.write("DATA: ")
+    _timestamp_and_record(sys.stdout, *args)
+    if data_fh:
+        _timestamp_and_record(data_fh, *args)
+        return True
+    return False
 
-        # python don't do multi-methods...
-        if len(args) == 0:
-            #print("WRITE END",args)
-            self.fh.write("\n")
-            self.beginning_of_line = True
-        elif len(args) == 1:
-            if isinstance( args[0], dict ):
-                #print("WRITE dictish",args)
-                for name,value in args[0].items():
-                    self.write( name, value )
-                self.write()
-            elif isinstance( args[0], tuple) or isinstance( args[0], list ):
-                #print("WRITE listish",args)
-                self.fh.write(",")
-                self.fh.write( ",".join(str(x) for x in args[0]) )
-                self.write()
-            elif len( args ) == 1:
-                #print("WRITE v-only",args)
-                if not self.beginning_of_line:
-                    self.fh.write(",")
-                if format:
-                    self.fh.write(format.format(args[0]))
-                else:
-                    self.fh.write("{:}".format(args[0]))
-                self.beginning_of_line = False
-            else:
-                raise Exception( "Expected list, dict, value or k,v. Saw",args );
-        elif len( args ) == 2:
-            #print("WRITE kv",*args)
-            if not self.beginning_of_line:
-                self.fh.write(",")
+def _timestamp_and_record(fh, *args):
+    """Do the write to the file handle"""
 
-            self.fh.write(args[0])
-            if units:
-                self.fh.write( ",")
-                self.fh.write( units )
-            if precision:
-                self.fh.write( ",")
-                self.fh.write( precision )
-            self.fh.write(",")
-            if format:
-                self.fh.write(format.format(args[1]))
-            else:
-                self.fh.write( "{:}".format(args[1]) )
-            self.beginning_of_line = False
+    global timestamp_source
+
+    # figure out if multiple args, a list, or setup
+    if len(args) == 1:
+        the_arg = args[0]
+        if isinstance(the_arg, list) or isinstance(the_arg, tuple):
+            # a list == a row
+            # we purposefully do NOT do a join, to minimize memory impact
+
+            if timestamp_source:
+                dt = timestamp_source.datetime
+                iso8601_utc = "{:04}{:02}{:02}T{:02}{:02}{:02}Z".format( dt.tm_year, dt.tm_mon, dt.tm_mday, dt.tm_hour, dt.tm_min, dt.tm_sec)
+                fh.write(iso8601_utc)
+                fh.write(",") # we know there is more data
+
+            for i,value in enumerate(the_arg):
+                if i>0:
+                    fh.write(",")
+                fh.write( str(value) )
+            fh.write("\n")
+
+        elif isinstance(the_arg, str) or isinstance(the_arg, int) or isinstance(the_arg, float) or isinstance(the_arg, bool):
+            # degenerate case of a list of values that is 1 long
+            _timestamp_and_record(fh, [the_arg])
 
         else:
-            raise Exception( "Expected list, dict, value or k,v,.... Saw",args );
-            
-        #print("      format={:} units={:} prec={:}".format(format,units,precision))
+            raise Exception("Expected a list, or several arguments, saw {:} {:}".format(the_arg.__class__.__name__,the_arg))
 
-    def close(self):
-        self.fh.close()
+    elif len(args) >= 1:
+        # the args are a list, so do that
+        _timestamp_and_record(fh, args)
+
+    else:
+        raise Exception("You called timestamp_and_record() without any arguments")
+        return
+
+def close():
+    """
+    Usually not necessary. You can continue blithely again after this (it reopens).
+    import timestamp_csv_data
+    ...
+    timestamp_csv_data.close()
+    """
+
+    global data_fh
+    if data_fh:
+        data_fh.close()
+    data_fh = None
+
+def rotate():
+    """
+    Rename current file to /sd/data_YYYYMMDD_HHMMSS.csv, and start a new one.
+    import timestamp_csv_data
+    ...
+    timestamp_csv_data.rotate()
+    """
+    #print("# rot closing...")
+    close()
+    # if we get called before anything
+    setup()
+
+    name,delim,ext = path.rpartition('.')
+    #print("# rot path parsed as {:} ext {:}".format(name,ext))
+
+    vers = None
+    exists = False
+
+    try:
+        exists = os.stat(path) # will throw if non-existent
+        #print("# rot path exists")
+
+    except OSError as e:
+        if e.strerror == "No such file/directory":
+            # no extant data.csv, so move along
+            #print("# rot no {:} yet".format(path))
+            pass
+        else:
+            raise # something else went wrong
+
+    if exists:
+        if timestamp_source:
+            dt = timestamp_source.datetime
+            vers = "{:04}{:02}{:02}_{:02}{:02}{:02}".format( dt.tm_year, dt.tm_mon, dt.tm_mday, dt.tm_hour, dt.tm_min, dt.tm_sec)
+            #print("# rot have a ts source so {:}".format(vers))
+        else:
+            # sigh, find how many and count them
+            rest, delim, basename = path.rpartition('/') # basename
+            basename, delim, rest = basename.rpartition('.') # strip .ext
+
+            datadir,delim,rest = path.rpartition( '/') # drops leading /
+            datadir = datadir
+            print("# rot no ts source, so path parses to dir {:}".format(datadir))
+
+            ct = 0
+            #print("# rot list 'em vs {:}.|_ ...".format(basename))
+            for fname in os.listdir(datadir):
+                # could be data.csv or data_YYYYMMM..csv
+                print("# rot   consider {:}".format(fname))
+                if fname.startswith(basename + ".") or fname.startswith(basename + "_"):
+                    ct += 1
+                    print("# rot   counts! {:}".format(ct))
+            vers = None if ct==0 else str(ct)
+            #print("# rot no ts source so ct {:} -> {:}".format(ct, vers))
+
+    if vers:
+        new_name = "{:}_{:}.{:}".format( name, vers, ext )
+        print("# Renamed {:} -> {:}".format(path,new_name))
+        os.rename(path, new_name)
+
+    print("# rot reopen...")
+    _open()
+
