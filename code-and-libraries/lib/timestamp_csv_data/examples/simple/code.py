@@ -4,7 +4,7 @@ Write data with full control, no defaults.
 Assumes: adafruit_sdcard using featherwing adalogger spi with CS=D11
 """
 from timestamp_csv_data import timestamp_and_record
-import timestamp_csv_data
+import timestamp_csv_data # normal people don't need this, we do tricky stuff to test
 
 import board,sys,busio
 import adafruit_pcf8523
