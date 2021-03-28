@@ -1,0 +1,5 @@
+Datasheet for apds9960 gesture sensor
+https://cdn.sparkfun.com/assets/learn_tutorials/3/2/1/Avago-APDS-9960-datasheet.pdf
+
+The M0 adalogger real-time-clock + sdcard
+https://learn.adafruit.com/adafruit-adalogger-featherwing/circuitpython
