@@ -2,6 +2,9 @@ import time
 import board
 import digitalio
 
+print("Initializes the built-in LED pin");
+print("Then watch me for 1 second blink");
+
 try:
     indicator_LED = digitalio.DigitalInOut( board.D13 )
     indicator_LED.direction = digitalio.Direction.OUTPUT
